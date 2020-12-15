@@ -1,146 +1,142 @@
+from modules.cb.queue import Queue
+from modules.cb.rounds import Round
 import discord
 from discord.ext import commands
 
 
-class Boss:
-    def __init__(self):
-        self.names = []
-        self.health = None
-
-
-class Round:
-    def __init__(self):
-        self.boss = [Boss() for _ in range(5)]
-
-
-class CB(commands.Cog):
-
+class CB2(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.IsActiveCB = False
-        self.currentQueueMessage = None
-        self.contextUser = None
-        self.contextRound = None
-        self.activeCbChannel = None
-        self.currentRound = None
-        self.currentBoss = None
-        self.rounds = []
+        self.queue = None
+        self.activeChannel = None
+        self.activeMessageList = None
+        self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 
-    # events
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        if reaction.message.id == self.currentQueueMessage and user.id == self.contextUser and reaction.count == 2:
-            for boss in range(5):
-                if reaction.emoji == self.emojis[boss]:
-                    self.rounds[self.contextRound-1].boss[boss].names.append(f'<@{user.id}>')
-                    await reaction.message.channel.send(f'<@{user.id}> was added to B{boss+1} '
-                                                        f'in round {self.contextRound}')
+        if reaction.message.channel.id == self.activeChannel and not user.bot:
+            bossNum, roundNum = self.add(user, reaction.emoji, reaction.message.id)
+            newEmbed = makeEmbed(self.queue.rounds[roundNum], self.queue.currentRound + roundNum)
 
-        print(f'reaction added, message: {reaction.message.id}, user: {user.id}')
+            await reaction.message.edit(embed=newEmbed)
+            print(f'reaction added, message: {reaction.message.id}, user: {user.id}, emoji: {reaction.emoji}')
 
-    # commands
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        user = await self.client.fetch_user(payload.user_id)
+        msg = await self.client.get_channel(payload.channel_id).fetch_message(payload.message_id)
+        if payload.channel_id == self.activeChannel and not user.bot:
+            bossNum, roundNum = self.remove(user, payload.emoji, payload.message_id)
+            newEmbed = makeEmbed(self.queue.rounds[roundNum], self.queue.currentRound + roundNum)
+
+            await msg.edit(embed=newEmbed)
+            print(f'reaction removed, message: {msg.id}, user: {user.id}, emoji: {payload.emoji}')
+
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def start(self, ctx):
-        self.IsActiveCB = True
-        self.currentRound = 1
-        self.currentBoss = 1
-        self.rounds = [Round() for _ in range(100)]
-        self.activeCbChannel = ctx.message.channel.id
-        await ctx.send('Clan Battle has started.')
+        if not self.isActiveCB:
+            self.queue = Queue()
+            self.queue.currentBoss = 1
+            self.queue.currentRound = 1
+            self.isActiveCB = True
+            self.activeChannel = ctx.message.channel.id
+            await ctx.send(f'CB STARTED.')
+
+            embedList = []
+            roundNum = 0
+            for round in self.queue.rounds:
+                embedList.append(makeEmbed(round, self.queue.currentRound + roundNum))
+                roundNum += 1
+
+            for i in range(3):
+                message = await ctx.send(embed=embedList[i])
+                self.queue.rounds[i].messageId = message.id
+                for emoji in self.emojis:
+                    await message.add_reaction(emoji)
+        else:
+            await ctx.send('CB ALREADY STARTED.')
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def end(self, ctx):
-        self.IsActiveCB = False
-        self.rounds.clear()
-        await ctx.send('Clan Battle has ended.')
+        self.queue = None
+        self.isActiveCB = False
+        await ctx.send('CB ENDED.')
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def setr(self, ctx, round):
-        self.currentRound = round
-        await ctx.send(f'Current round set to {round}.')
+    async def kill(self, ctx):
+        if self.queue.currentBoss > 4:
+            self.queue.currentRound += 1
+            self.queue.currentBoss = 1
+            await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
 
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def setb(self, ctx, boss):
-        self.currentBoss = boss
-        await ctx.send(f'Current boss set to {boss}.')
-
-    @commands.command()
-    async def queue(self, ctx, round=None):
-        if self.IsActiveCB and self.activeCbChannel == ctx.message.channel.id:
-            if round is None:
-                round = self.currentRound
-            if int(round) < 0 or int(round) > 100:
-                await ctx.send('no')
-                return
-            embed = discord.Embed(title='Queue',
-                                  description=f'Round {int(round)}',
-                                  color=0x06ade5)
-            embed.set_thumbnail(url="https://media.discordapp.net/attachments/286838882392080384/769995627484151818"
-                                    "/1580219100588.gif")
-
-            for i in range(self.currentBoss - 1, 5):
-                if len(self.rounds[int(round) - 1].boss[i].names):
-                    embed.add_field(name=f'B{i + 1}',
-                                    value=', '.join(self.rounds[int(round) - 1].boss[i].names),
-                                    inline=False)
-                else:
-                    embed.add_field(name=f'B{i + 1}',
-                                    value='???',
-                                    inline=False)
-
-            message = await ctx.send(embed=embed)
-            self.currentQueueMessage = message.id
-            self.contextUser = ctx.message.author.id
-            self.contextRound = round
+            newRound = Round()
+            newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
+            channel = self.client.get_channel(self.activeChannel)
+            message = await channel.send(embed=newEmbed)
             for emoji in self.emojis:
                 await message.add_reaction(emoji)
-        else:
-            await ctx.send(f"Clan Battle hasn't started.")
+            newRound.messageId = message.id
 
-    @commands.command()
-    async def add(self, ctx, round, boss):
-        if self.IsActiveCB and self.activeCbChannel == ctx.message.channel.id:
-            self.rounds[int(round) - 1].boss[int(boss) - 1].names.append(ctx.message.author.mention)
-            await ctx.send(f'{ctx.message.author.mention} was added to B{boss} in round {round}.')
+            self.queue.rounds.pop(0)
+            self.queue.rounds.append(newRound)
         else:
-            if self.activeCbChannel != ctx.message.channel.id:
-                await ctx.send(f'This is not the channel for clan battle!')
-            else:
-                await ctx.send(f"Clan Battle hasn't started.")
+            self.queue.currentBoss += 1
 
-    @commands.command()
-    async def remove(self, ctx, round, boss):
-        if self.IsActiveCB and self.activeCbChannel == ctx.message.channel.id:
-            self.rounds[int(round) - 1].boss[int(boss) - 1].names.remove(ctx.message.author.mention)
-            await ctx.send(f'{ctx.message.author.mention} was removed from B{boss} in round {round}.')
+        await ctx.send(f'B{self.queue.currentBoss} is up.')
+
+        mentions = self.queue.rounds[0].bosses[self.queue.currentBoss-1].names
+        if mentions:
+            await ctx.send(', '.join(mentions))
+
+    def add(self, user, emoji, messageId):
+        bossNum = 0
+        roundNum = 0
+        for i in range(len(self.queue.rounds)):
+            round = self.queue.rounds[i]
+            if round.messageId == messageId:
+                for boss in range(5):
+                    if emoji == self.emojis[boss]:
+                        round.bosses[boss].names.append(f'<@{user.id}>')
+                        bossNum = boss
+                roundNum = i
+
+        return bossNum, roundNum
+
+    def remove(self, user, emoji, messageId):
+        bossNum = 0
+        roundNum = 0
+        for i in range(len(self.queue.rounds)):
+            round = self.queue.rounds[i]
+            if round.messageId == messageId:
+                for boss in range(5):
+                    if emoji == self.emojis[boss]:
+                        round.bosses[boss].names.remove(f'<@{user.id}>')
+                        bossNum = boss
+                roundNum = i
+
+        return bossNum, roundNum
+
+def makeEmbed(round, roundNum):
+    bossNum = 0
+    embed = discord.Embed(title=f'Round {roundNum}',
+                          color=0x06ade5)
+    embed.set_thumbnail(url="https://media.discordapp.net/attachments/286838882392080384/769995627484151818"
+                            "/1580219100588.gif")
+    for boss in round.bosses:
+        if boss.names:
+            embed.add_field(name=f'B{bossNum + 1}',
+                            value=', '.join(boss.names),
+                            inline=False)
         else:
-            if self.activeCbChannel != ctx.message.channel.id:
-                await ctx.send(f'This is not the channel for clan battle.')
-            else:
-                await ctx.send(f"Clan Battle hasn't started.")
-
-    @commands.command()
-    async def next(self, ctx):
-        if self.IsActiveCB:
-            if self.currentBoss > 4:
-                self.currentRound += 1
-                self.currentBoss = 1
-                await ctx.send(f'Proceeding to round {self.currentRound}')
-            else:
-                self.currentBoss += 1
-
-            queuedUsers = self.rounds[self.currentRound - 1].boss[self.currentBoss - 1].names
-            await ctx.send(f'B{self.currentBoss} is up.')
-            if queuedUsers:
-                await ctx.send(' ,'.join(queuedUsers))
-        else:
-            await ctx.send(f"Clan Battle hasn't started.")
+            embed.add_field(name=f'B{bossNum + 1}',
+                            value='???',
+                            inline=False)
+        bossNum += 1
+    return embed
 
 
 def setup(client):
-    client.add_cog(CB(client))
+    client.add_cog(CB2(client))
