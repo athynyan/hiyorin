@@ -67,7 +67,7 @@ class CB(commands.Cog):
 
     @commands.command()
     async def kill(self, ctx):
-        if isActiveCB:
+        if self.isActiveCB:
             if self.queue.currentBoss > 4:
                 self.queue.currentRound += 1
                 self.queue.currentBoss = 1
