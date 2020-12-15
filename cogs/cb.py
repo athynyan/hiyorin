@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 
-class CB2(commands.Cog):
+class CB(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.queue = None
@@ -139,4 +139,4 @@ def makeEmbed(round, roundNum):
 
 
 def setup(client):
-    client.add_cog(CB2(client))
+    client.add_cog(CB(client))
