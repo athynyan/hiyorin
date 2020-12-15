@@ -67,29 +67,30 @@ class CB(commands.Cog):
 
     @commands.command()
     async def kill(self, ctx):
-        if self.queue.currentBoss > 4:
-            self.queue.currentRound += 1
-            self.queue.currentBoss = 1
-            await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
+        if isActiveCB:
+            if self.queue.currentBoss > 4:
+                self.queue.currentRound += 1
+                self.queue.currentBoss = 1
+                await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
 
-            newRound = Round()
-            newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
-            channel = self.client.get_channel(self.activeChannel)
-            message = await channel.send(embed=newEmbed)
-            for emoji in self.emojis:
-                await message.add_reaction(emoji)
-            newRound.messageId = message.id
+                newRound = Round()
+                newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
+                channel = self.client.get_channel(self.activeChannel)
+                message = await channel.send(embed=newEmbed)
+                for emoji in self.emojis:
+                    await message.add_reaction(emoji)
+                newRound.messageId = message.id
 
-            self.queue.rounds.pop(0)
-            self.queue.rounds.append(newRound)
-        else:
-            self.queue.currentBoss += 1
+                self.queue.rounds.pop(0)
+                self.queue.rounds.append(newRound)
+            else:
+                self.queue.currentBoss += 1
 
-        await ctx.send(f'B{self.queue.currentBoss} is up.')
+            await ctx.send(f'B{self.queue.currentBoss} is up.')
 
-        mentions = self.queue.rounds[0].bosses[self.queue.currentBoss-1].names
-        if mentions:
-            await ctx.send(', '.join(mentions))
+            mentions = self.queue.rounds[0].bosses[self.queue.currentBoss-1].names
+            if mentions:
+                await ctx.send(', '.join(mentions))
 
     def add(self, user, emoji, messageId):
         bossNum = 0
