@@ -1,5 +1,5 @@
-from modules.cb.queue import Queue
-from modules.cb.rounds import Round
+from models.cb.queue import Queue
+from models.cb.rounds import Round
 import discord
 from discord.ext import commands
 
@@ -9,14 +9,15 @@ class CB(commands.Cog):
         self.client = client
         self.queue = None
         self.activeChannel = None
-        self.activeMessageList = None
+        self.activeRoundCounter = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        if reaction.message.channel.id == self.activeChannel and not user.bot:
-            bossNum, roundNum = self.add(user, reaction.emoji, reaction.message.id)
+        expectedRole = discord.utils.get(reaction.message.guild.roles, name='Shuujin')
+        if reaction.message.channel.id == self.activeChannel and not user.bot and hasRole(expectedRole, user):
+            roundNum = self.add(user, reaction.emoji, reaction.message.id)
             newEmbed = makeEmbed(self.queue.rounds[roundNum], self.queue.currentRound + roundNum)
 
             await reaction.message.edit(embed=newEmbed)
@@ -27,14 +28,14 @@ class CB(commands.Cog):
         user = await self.client.fetch_user(payload.user_id)
         msg = await self.client.get_channel(payload.channel_id).fetch_message(payload.message_id)
         if payload.channel_id == self.activeChannel and not user.bot:
-            bossNum, roundNum = self.remove(user, payload.emoji, payload.message_id)
+            roundNum = self.remove(user, payload.emoji, payload.message_id)
             newEmbed = makeEmbed(self.queue.rounds[roundNum], self.queue.currentRound + roundNum)
 
             await msg.edit(embed=newEmbed)
             print(f'reaction removed, message: {msg.id}, user: {user.id}, emoji: {payload.emoji}')
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.has_role('Labyrinth Crepe Shop')
     async def start(self, ctx):
         if not self.isActiveCB:
             self.queue = Queue()
@@ -43,6 +44,9 @@ class CB(commands.Cog):
             self.isActiveCB = True
             self.activeChannel = ctx.message.channel.id
             await ctx.send(f'CB STARTED.')
+            message = await ctx.send(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
+                                     f'=== CURRENT BOSS: {self.queue.currentBoss} ===')
+            self.activeRoundCounter = message.id
 
             embedList = []
             roundNum = 0
@@ -59,13 +63,14 @@ class CB(commands.Cog):
             await ctx.send('CB ALREADY STARTED.')
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.has_role('Labyrinth Crepe Shop')
     async def end(self, ctx):
         self.queue = None
         self.isActiveCB = False
         await ctx.send('CB ENDED.')
 
     @commands.command()
+    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
     async def kill(self, ctx):
         if self.isActiveCB:
             if self.queue.currentBoss > 4:
@@ -73,6 +78,7 @@ class CB(commands.Cog):
                 self.queue.currentBoss = 1
                 await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
 
+                #add next round
                 newRound = Round()
                 newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
                 channel = self.client.get_channel(self.activeChannel)
@@ -80,15 +86,24 @@ class CB(commands.Cog):
                 for emoji in self.emojis:
                     await message.add_reaction(emoji)
                 newRound.messageId = message.id
-
-                self.queue.rounds.pop(0)
                 self.queue.rounds.append(newRound)
+
+                # remove oldest round embed
+                self.queue.rounds.pop(0)
+
             else:
+                # increment boss counter by 1
                 self.queue.currentBoss += 1
 
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
-            mentions = self.queue.rounds[0].bosses[self.queue.currentBoss-1].names
+            # edit current boss and round message
+            message = await self.client.get_channel(self.activeChannel).fetch_message(self.activeRoundCounter)
+            await message.edit(content=str(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
+                                           f'=== CURRENT BOSS: {self.queue.currentBoss} ==='))
+
+            # mention members queued up for the next
+            mentions = self.queue.rounds[0].bosses[self.queue.currentBoss - 1].names
             if mentions:
                 await ctx.send(', '.join(mentions))
 
@@ -99,26 +114,34 @@ class CB(commands.Cog):
             round = self.queue.rounds[i]
             if round.messageId == messageId:
                 for boss in range(5):
-                    if emoji == self.emojis[boss]:
+                    if emoji == self.emojis[boss] and f'<@{user.id}>' not in round.bosses[boss].names:
                         round.bosses[boss].names.append(f'<@{user.id}>')
                         bossNum = boss
                 roundNum = i
 
-        return bossNum, roundNum
+        return roundNum
 
     def remove(self, user, emoji, messageId):
+        # TODO: fix this shit
         bossNum = 0
         roundNum = 0
         for i in range(len(self.queue.rounds)):
             round = self.queue.rounds[i]
             if round.messageId == messageId:
                 for boss in range(5):
-                    if emoji == self.emojis[boss]:
-                        round.bosses[boss].names.remove(f'<@{user.id}>')
+                    if emoji == self.emojis[boss] and f'<@{user.id}>' in round.bosses[boss].names:
+                        for name in round.bosses[boss].names:
+                            name.remove(f'<@{user.id}>')
                         bossNum = boss
                 roundNum = i
 
-        return bossNum, roundNum
+        return roundNum
+
+def hasRole(expectedRole, user):
+    for role in user.roles:
+        if role == expectedRole:
+            return True
+    return False
 
 def makeEmbed(round, roundNum):
     bossNum = 0

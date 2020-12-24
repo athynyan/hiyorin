@@ -1,4 +1,4 @@
-from modules.cb.rounds import Round
+from models.cb.rounds import Round
 
 
 class Queue:
