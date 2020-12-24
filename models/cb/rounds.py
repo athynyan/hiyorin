@@ -1,4 +1,4 @@
-from modules.cb.boss import Boss
+from models.cb.boss import Boss
 
 
 class Round:
