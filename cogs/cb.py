@@ -111,6 +111,41 @@ class CB(commands.Cog):
 
     @commands.command()
     @commands.has_role('Labyrinth Crepe Shop')
+    async def next(self, ctx):
+        if self.isActiveCB:
+            self.queue.currentRound += 1
+            self.queue.currentBoss = 1
+            await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
+
+            # add next round
+            newRound = Round()
+            newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
+            channel = self.client.get_channel(self.activeChannel)
+            message = await channel.send(embed=newEmbed)
+            for emoji in self.emojis:
+                await message.add_reaction(emoji)
+            newRound.messageId = message.id
+            self.queue.rounds.append(newRound)
+
+            # remove oldest round embed
+            message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[0].messageId)
+            await message.delete()
+            self.queue.rounds.pop(0)
+
+            await ctx.send(f'B{self.queue.currentBoss} is up.')
+
+            # edit current boss and round message
+            message = await self.client.get_channel(self.activeChannel).fetch_message(self.activeRoundCounter)
+            await message.edit(content=str(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
+                                           f'=== CURRENT BOSS: {self.queue.currentBoss} ==='))
+
+            # mention members queued up for the next
+            mentions = self.queue.rounds[0].bosses[self.queue.currentBoss - 1].names
+            if mentions:
+                await ctx.send(', '.join(mentions))
+
+    @commands.command()
+    @commands.has_role('Labyrinth Crepe Shop')
     async def rm(self, ctx, messageNum, bossNum, user):
         print(f'{messageNum}, {bossNum}, {user}')
         nameList = self.queue.rounds[int(messageNum) - 1].bosses[int(bossNum) - 1].names
