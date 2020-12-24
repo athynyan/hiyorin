@@ -89,6 +89,8 @@ class CB(commands.Cog):
                 self.queue.rounds.append(newRound)
 
                 # remove oldest round embed
+                message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[0].messageId)
+                await message.delete()
                 self.queue.rounds.pop(0)
 
             else:
@@ -107,6 +109,20 @@ class CB(commands.Cog):
             if mentions:
                 await ctx.send(', '.join(mentions))
 
+    @commands.command()
+    @commands.has_role('Labyrinth Crepe Shop')
+    async def rm(self, ctx, messageNum, bossNum, user):
+        print(f'{messageNum}, {bossNum}, {user}')
+        nameList = self.queue.rounds[int(messageNum) - 1].bosses[int(bossNum) - 1].names
+        if user in nameList:
+            nameList.remove(user)
+
+        # update embed
+        newEmbed = makeEmbed(self.queue.rounds[int(messageNum) - 1], self.queue.currentRound + int(messageNum) - 1)
+        message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[int(messageNum) - 1].messageId)
+        await message.edit(embed=newEmbed)
+
+
     def add(self, user, emoji, messageId):
         bossNum = 0
         roundNum = 0
@@ -114,8 +130,8 @@ class CB(commands.Cog):
             round = self.queue.rounds[i]
             if round.messageId == messageId:
                 for boss in range(5):
-                    if emoji == self.emojis[boss] and f'<@{user.id}>' not in round.bosses[boss].names:
-                        round.bosses[boss].names.append(f'<@{user.id}>')
+                    if emoji == self.emojis[boss] and f'<@!{user.id}>' not in round.bosses[boss].names:
+                        round.bosses[boss].names.append(f'<@!{user.id}>')
                         bossNum = boss
                 roundNum = i
 
@@ -129,9 +145,8 @@ class CB(commands.Cog):
             round = self.queue.rounds[i]
             if round.messageId == messageId:
                 for boss in range(5):
-                    if emoji == self.emojis[boss] and f'<@{user.id}>' in round.bosses[boss].names:
-                        for name in round.bosses[boss].names:
-                            name.remove(f'<@{user.id}>')
+                    if emoji == self.emojis[boss] and f'<@!{user.id}>' in round.bosses[boss].names:
+                        round.bosses[boss].names.remove(f'<@!{user.id}>')
                         bossNum = boss
                 roundNum = i
 
