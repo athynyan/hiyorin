@@ -71,6 +71,7 @@ class CB(commands.Cog):
 
     @commands.command()
     @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+    @commands.cooldown(1,15)
     async def kill(self, ctx):
         if self.isActiveCB:
             if self.queue.currentBoss > 4:
