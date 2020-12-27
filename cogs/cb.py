@@ -38,12 +38,12 @@ class CB(commands.Cog):
     @commands.has_role('Labyrinth Crepe Shop')
     async def start(self, ctx):
         if not self.isActiveCB:
+            await ctx.message.channel.purge(limit=10)
             self.queue = Queue()
             self.queue.currentBoss = 1
             self.queue.currentRound = 1
             self.isActiveCB = True
             self.activeChannel = ctx.message.channel.id
-            await ctx.send(f'CB STARTED.')
             message = await ctx.send(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
                                      f'=== CURRENT BOSS: {self.queue.currentBoss} ===')
             self.activeRoundCounter = message.id
@@ -67,7 +67,7 @@ class CB(commands.Cog):
     async def end(self, ctx):
         self.queue = None
         self.isActiveCB = False
-        await ctx.send('CB ENDED.')
+        await ctx.message.channel.purge(limit=10)
 
     @commands.command()
     @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
@@ -112,26 +112,46 @@ class CB(commands.Cog):
 
     @commands.command()
     @commands.has_role('Labyrinth Crepe Shop')
-    async def next(self, ctx):
+    async def next(self, ctx, round=0):
         if self.isActiveCB:
-            self.queue.currentRound += 1
-            self.queue.currentBoss = 1
-            await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
+            if round == 0:
+                self.queue.currentRound += 1
+                self.queue.currentBoss = 1
+                await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
 
-            # add next round
-            newRound = Round()
-            newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
-            channel = self.client.get_channel(self.activeChannel)
-            message = await channel.send(embed=newEmbed)
-            for emoji in self.emojis:
-                await message.add_reaction(emoji)
-            newRound.messageId = message.id
-            self.queue.rounds.append(newRound)
+                # add next round
+                newRound = Round()
+                newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
+                channel = self.client.get_channel(self.activeChannel)
+                message = await channel.send(embed=newEmbed)
+                for emoji in self.emojis:
+                    await message.add_reaction(emoji)
+                newRound.messageId = message.id
+                self.queue.rounds.append(newRound)
 
-            # remove oldest round embed
-            message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[0].messageId)
-            await message.delete()
-            self.queue.rounds.pop(0)
+                # remove oldest round embed
+                message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[0].messageId)
+                await message.delete()
+                self.queue.rounds.pop(0)
+            else:
+                self.queue.currentRound = round
+                self.queue.currentBoss = 1
+                await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
+
+                embedList = []
+                roundNum = 0
+                for round in self.queue.rounds:
+                    message = await self.client.get_channel(self.activeChannel).fetch_message(
+                        round.messageId)
+                    await message.delete()
+                    embedList.append(makeEmbed(round, self.queue.currentRound + roundNum))
+                    roundNum += 1
+                channel = self.client.get_channel(self.activeChannel)
+                for i in range(3):
+                    message = await channel.send(embed=embedList[i])
+                    self.queue.rounds[i].messageId = message.id
+                    for emoji in self.emojis:
+                        await message.add_reaction(emoji)
 
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
