@@ -14,25 +14,12 @@ class CB(commands.Cog):
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 
     @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        expectedRole = discord.utils.get(reaction.message.guild.roles, name='Shuujin')
-        if reaction.message.channel.id == self.activeChannel and not user.bot and hasRole(expectedRole, user):
-            roundNum = self.add(user, reaction.emoji, reaction.message.id)
-            newEmbed = makeEmbed(self.queue.rounds[roundNum], self.queue.currentRound + roundNum)
-
-            await reaction.message.edit(embed=newEmbed)
-            print(f'reaction added, message: {reaction.message.id}, user: {user.id}, emoji: {reaction.emoji}')
+    async def on_raw_reaction_add(self, payload):
+        await self.updateQueueTable(payload)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
-        user = await self.client.fetch_user(payload.user_id)
-        msg = await self.client.get_channel(payload.channel_id).fetch_message(payload.message_id)
-        if payload.channel_id == self.activeChannel and not user.bot:
-            roundNum = self.remove(user, payload.emoji, payload.message_id)
-            newEmbed = makeEmbed(self.queue.rounds[roundNum], self.queue.currentRound + roundNum)
-
-            await msg.edit(embed=newEmbed)
-            print(f'reaction removed, message: {msg.id}, user: {user.id}, emoji: {payload.emoji}')
+        await self.updateQueueTable(payload, False)
 
     @commands.command()
     @commands.has_role('Labyrinth Crepe Shop')
@@ -51,7 +38,7 @@ class CB(commands.Cog):
             embedList = []
             roundNum = 0
             for round in self.queue.rounds:
-                embedList.append(makeEmbed(round, self.queue.currentRound + roundNum))
+                embedList.append(makeQueueEmbed(round, self.queue.currentRound + roundNum))
                 roundNum += 1
 
             for i in range(3):
@@ -81,7 +68,7 @@ class CB(commands.Cog):
 
                 #add next round
                 newRound = Round()
-                newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
+                newEmbed = makeQueueEmbed(newRound, self.queue.currentRound + 2)
                 channel = self.client.get_channel(self.activeChannel)
                 message = await channel.send(embed=newEmbed)
                 for emoji in self.emojis:
@@ -121,7 +108,7 @@ class CB(commands.Cog):
 
                 # add next round
                 newRound = Round()
-                newEmbed = makeEmbed(newRound, self.queue.currentRound + 2)
+                newEmbed = makeQueueEmbed(newRound, self.queue.currentRound + 2)
                 channel = self.client.get_channel(self.activeChannel)
                 message = await channel.send(embed=newEmbed)
                 for emoji in self.emojis:
@@ -144,7 +131,7 @@ class CB(commands.Cog):
                     message = await self.client.get_channel(self.activeChannel).fetch_message(
                         round.messageId)
                     await message.delete()
-                    embedList.append(makeEmbed(round, self.queue.currentRound + roundNum))
+                    embedList.append(makeQueueEmbed(round, self.queue.currentRound + roundNum))
                     roundNum += 1
                 channel = self.client.get_channel(self.activeChannel)
                 for i in range(3):
@@ -174,39 +161,41 @@ class CB(commands.Cog):
             nameList.remove(user)
 
         # update embed
-        newEmbed = makeEmbed(self.queue.rounds[int(messageNum) - 1], self.queue.currentRound + int(messageNum) - 1)
+        newEmbed = makeQueueEmbed(self.queue.rounds[int(messageNum) - 1], self.queue.currentRound + int(messageNum) - 1)
         message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[int(messageNum) - 1].messageId)
         await message.edit(embed=newEmbed)
 
 
-    def add(self, user, emoji, messageId):
-        bossNum = 0
+    def updateQueue(self, user, emoji, messageId, add=True):
         roundNum = 0
         for i in range(len(self.queue.rounds)):
             round = self.queue.rounds[i]
             if round.messageId == messageId:
                 for boss in range(5):
-                    if emoji == self.emojis[boss] and f'<@!{user.id}>' not in round.bosses[boss].names:
-                        round.bosses[boss].names.append(f'<@!{user.id}>')
-                        bossNum = boss
+                    if str(emoji) == self.emojis[boss]:
+                        if add == True and user.mention not in round.bosses[boss].names:
+                            round.bosses[boss].names.append(user.mention)
+                        else:
+                            round.bosses[boss].names.remove(user.mention)
                 roundNum = i
 
         return roundNum
 
-    def remove(self, user, emoji, messageId):
-        # TODO: fix this shit
-        bossNum = 0
-        roundNum = 0
-        for i in range(len(self.queue.rounds)):
-            round = self.queue.rounds[i]
-            if round.messageId == messageId:
-                for boss in range(5):
-                    if emoji == self.emojis[boss] and f'<@!{user.id}>' in round.bosses[boss].names:
-                        round.bosses[boss].names.remove(f'<@!{user.id}>')
-                        bossNum = boss
-                roundNum = i
 
-        return roundNum
+    async def updateQueueTable(self, payload, add=True):
+        msg = await self.client.get_channel(payload.channel_id).fetch_message(payload.message_id)
+        user = await msg.guild.fetch_member(payload.user_id)
+        expectedRole = discord.utils.get(msg.guild.roles, name='Shuujin')
+        if payload.channel_id == self.activeChannel and not user.bot and hasRole(expectedRole, user):
+            if add == True:
+                roundNum = self.updateQueue(user, payload.emoji, payload.message_id)
+            else:
+                roundNum = self.updateQueue(user, payload.emoji, payload.message_id, False)
+            newEmbed = makeQueueEmbed(self.queue.rounds[roundNum], self.queue.currentRound + roundNum)
+
+            await msg.edit(embed=newEmbed)
+            print(f'reaction caught, message: {msg.id}, user: {user.id}, emoji: {payload.emoji}')
+
 
 def hasRole(expectedRole, user):
     for role in user.roles:
@@ -214,7 +203,7 @@ def hasRole(expectedRole, user):
             return True
     return False
 
-def makeEmbed(round, roundNum):
+def makeQueueEmbed(round, roundNum):
     bossNum = 0
     embed = discord.Embed(title=f'Round {roundNum}',
                           color=0x06ade5)
