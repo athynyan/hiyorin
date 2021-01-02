@@ -6,3 +6,4 @@ class Queue:
         self.rounds = [Round() for _ in range(3)]
         self.currentRound = None
         self.currentBoss = None
+        self.currentTier = None
