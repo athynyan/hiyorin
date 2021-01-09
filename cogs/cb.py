@@ -30,6 +30,7 @@ class CB(commands.Cog):
             self.queue = Queue()
             self.queue.currentBoss = 1
             self.queue.currentRound = 1
+            self.queue.updateTier()
             self.isActiveCB = True
             self.activeChannel = ctx.message.channel.id
             today = date.today()
@@ -87,7 +88,7 @@ class CB(commands.Cog):
             else:
                 # increment boss counter by 1
                 self.queue.currentBoss += 1
-
+            self.queue.updateTier()
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
             # edit current boss and round message
@@ -143,6 +144,7 @@ class CB(commands.Cog):
                     for emoji in self.emojis:
                         await message.add_reaction(emoji)
 
+            self.queue.updateTier()
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
             # edit current boss and round message
