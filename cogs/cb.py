@@ -1,8 +1,10 @@
+import discord
+import pytz
 from models.cb.queue import Queue
 from models.cb.rounds import Round
-import discord
-from discord.ext import commands
-from datetime import date
+from discord.ext import commands, tasks
+from datetime import datetime
+
 
 class CB(commands.Cog):
     def __init__(self, client):
@@ -11,9 +13,11 @@ class CB(commands.Cog):
         self.activeDate = None
         self.activeChannel = None
         self.activeRoundCounter = None
+        self.killChannel = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 
+    # events
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         await self.updateQueueTable(payload)
@@ -22,6 +26,43 @@ class CB(commands.Cog):
     async def on_raw_reaction_remove(self, payload):
         await self.updateQueueTable(payload, False)
 
+    # tasks
+    @tasks.loop(seconds=1.0, count=1800)
+    async def syncWithClock(self):
+        currentTime = datetime.now(pytz.timezone('Japan'))
+        minutes = currentTime.strftime('%M')
+        if minutes == '00' or minutes == '30':
+            self.groupPing.start()
+
+    @tasks.loop(minutes=30.0)
+    async def groupPing(self):
+        currentTime = datetime.now(pytz.timezone('Japan'))
+        hour = currentTime.strftime('%H')
+        minute = currentTime.strftime('%M')
+        if self.killChannel is not None:
+            channel = self.client.get_channel(self.killChannel)
+            if hour == '05' and minute == '00':
+                role = discord.utils.get(channel.guild.roles, name='Group 1')
+                await channel.send(role.mention)
+                await channel.send('!cbtime')
+            if hour == '08' and minute == '30':
+                role = discord.utils.get(channel.guild.roles, name='Group 1.5')
+                await channel.send(role.mention)
+                await channel.send('!cbtime')
+            if hour == '13' and minute == '00':
+                role = discord.utils.get(channel.guild.roles, name='Group 2')
+                await channel.send(role.mention)
+                await channel.send('!cbtime')
+            if hour == '19' and minute == '00':
+                role = discord.utils.get(channel.guild.roles, name='Group 3')
+                await channel.send(role.mention)
+                await channel.send('!cbtime')
+
+    @groupPing.before_loop
+    async def beforeGroupPing(self):
+        self.syncWithClock.cancel()
+
+    # commands
     @commands.command()
     @commands.has_role('Labyrinth Crepe Shop')
     async def start(self, ctx):
@@ -33,9 +74,11 @@ class CB(commands.Cog):
             self.queue.updateTier()
             self.isActiveCB = True
             self.activeChannel = ctx.message.channel.id
-            today = date.today()
+            self.syncWithClock.start()
+            today = datetime.now()
             self.activeDate = today.strftime('%B %Y')
-            queueCounter = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier, self.activeDate)
+            queueCounter = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier,
+                                            self.activeDate)
             message = await ctx.send(embed=queueCounter)
             self.activeRoundCounter = message.id
 
@@ -63,8 +106,11 @@ class CB(commands.Cog):
     @commands.command()
     @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
     @commands.cooldown(1, 15)
-    async def kill(self, ctx):
+    async def kill(self, ctx): # TODO: change queue table generation after round 45
         if self.isActiveCB:
+            if self.killChannel is None:
+                self.killChannel = ctx.message.channel.id
+
             if self.queue.currentBoss > 4:
                 self.queue.currentRound += 1
                 self.queue.currentBoss = 1
@@ -81,7 +127,8 @@ class CB(commands.Cog):
                 self.queue.rounds.append(newRound)
 
                 # remove oldest round embed
-                message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[0].messageId)
+                message = await self.client.get_channel(self.activeChannel).fetch_message(
+                    self.queue.rounds[0].messageId)
                 await message.delete()
                 self.queue.rounds.pop(0)
 
@@ -92,7 +139,8 @@ class CB(commands.Cog):
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
             # edit current boss and round message
-            newCounterEmbed = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier, self.activeDate)
+            newCounterEmbed = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier,
+                                               self.activeDate)
             message = await self.client.get_channel(self.activeChannel).fetch_message(self.activeRoundCounter)
             await message.edit(embed=newCounterEmbed)
 
@@ -121,7 +169,8 @@ class CB(commands.Cog):
                 self.queue.rounds.append(newRound)
 
                 # remove oldest round embed
-                message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[0].messageId)
+                message = await self.client.get_channel(self.activeChannel).fetch_message(
+                    self.queue.rounds[0].messageId)
                 await message.delete()
                 self.queue.rounds.pop(0)
             else:
@@ -168,9 +217,11 @@ class CB(commands.Cog):
 
         # update embed
         newEmbed = makeQueueEmbed(self.queue.rounds[int(messageNum) - 1], self.queue.currentRound + int(messageNum) - 1)
-        message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[int(messageNum) - 1].messageId)
+        message = await self.client.get_channel(self.activeChannel).fetch_message(
+            self.queue.rounds[int(messageNum) - 1].messageId)
         await message.edit(embed=newEmbed)
 
+    # class methods
     def updateQueue(self, user, emoji, messageId, add=True):
         roundNum = 0
         for i in range(len(self.queue.rounds)):
@@ -201,6 +252,7 @@ class CB(commands.Cog):
             print(f'reaction caught, message: {msg.id}, user: {user.id}, emoji: {payload.emoji}')
 
 
+# global functions
 def hasRole(expectedRole, user):
     for role in user.roles:
         if role == expectedRole:
@@ -227,13 +279,14 @@ def makeQueueEmbed(round, roundNum):
     return embed
 
 
-def makeCounterEmbed(roundNum, bossNum, tierNum, date):
+def makeCounterEmbed(roundNum, bossNum, tierNum, thisDate):
     embed = discord.Embed(color=0x6d2c2c)
-    embed.add_field(name=f"CB {date}", value=f'\u200b', inline=False)
+    embed.add_field(name=f"CB {thisDate}", value=f'\u200b', inline=False)
     embed.add_field(name="Current Round", value=roundNum, inline=True)
     embed.add_field(name="Current Boss", value=bossNum, inline=True)
     embed.add_field(name="Current Tier", value=tierNum, inline=True)
     return embed
+
 
 def setup(client):
     client.add_cog(CB(client))
