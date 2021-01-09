@@ -146,9 +146,10 @@ class CB(commands.Cog):
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
             # edit current boss and round message
+            newCounterEmbed = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier,
+                                               self.activeDate)
             message = await self.client.get_channel(self.activeChannel).fetch_message(self.activeRoundCounter)
-            await message.edit(content=str(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
-                                           f'=== CURRENT BOSS: {self.queue.currentBoss} ==='))
+            await message.edit(embed=newCounterEmbed)
 
             # mention members queued up for the next
             mentions = self.queue.rounds[0].bosses[self.queue.currentBoss - 1].names
@@ -226,7 +227,7 @@ def makeQueueEmbed(round, roundNum):
 
 def makeCounterEmbed(roundNum, bossNum, tierNum, date):
     embed = discord.Embed(color=0x6d2c2c)
-    embed.add_field(name=f"CB {date}", value="", inline=False)
+    embed.add_field(name=f"CB {date}", value=f'\u200b', inline=False)
     embed.add_field(name="Current Round", value=roundNum, inline=True)
     embed.add_field(name="Current Boss", value=bossNum, inline=True)
     embed.add_field(name="Current Tier", value=tierNum, inline=True)
