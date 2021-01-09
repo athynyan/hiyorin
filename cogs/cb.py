@@ -2,12 +2,13 @@ from models.cb.queue import Queue
 from models.cb.rounds import Round
 import discord
 from discord.ext import commands
-
+from datetime import date
 
 class CB(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.queue = None
+        self.activeDate = None
         self.activeChannel = None
         self.activeRoundCounter = None
         self.isActiveCB = False
@@ -29,10 +30,13 @@ class CB(commands.Cog):
             self.queue = Queue()
             self.queue.currentBoss = 1
             self.queue.currentRound = 1
+            self.queue.updateTier()
             self.isActiveCB = True
             self.activeChannel = ctx.message.channel.id
-            message = await ctx.send(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
-                                     f'=== CURRENT BOSS: {self.queue.currentBoss} ===')
+            today = date.today()
+            self.activeDate = today.strftime('%B %Y')
+            queueCounter = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier, self.activeDate)
+            message = await ctx.send(embed=queueCounter)
             self.activeRoundCounter = message.id
 
             embedList = []
@@ -58,7 +62,7 @@ class CB(commands.Cog):
 
     @commands.command()
     @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
-    @commands.cooldown(1,15)
+    @commands.cooldown(1, 15)
     async def kill(self, ctx):
         if self.isActiveCB:
             if self.queue.currentBoss > 4:
@@ -66,7 +70,7 @@ class CB(commands.Cog):
                 self.queue.currentBoss = 1
                 await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
 
-                #add next round
+                # add next round
                 newRound = Round()
                 newEmbed = makeQueueEmbed(newRound, self.queue.currentRound + 2)
                 channel = self.client.get_channel(self.activeChannel)
@@ -84,13 +88,13 @@ class CB(commands.Cog):
             else:
                 # increment boss counter by 1
                 self.queue.currentBoss += 1
-
+            self.queue.updateTier()
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
             # edit current boss and round message
+            newCounterEmbed = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier, self.activeDate)
             message = await self.client.get_channel(self.activeChannel).fetch_message(self.activeRoundCounter)
-            await message.edit(content=str(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
-                                           f'=== CURRENT BOSS: {self.queue.currentBoss} ==='))
+            await message.edit(embed=newCounterEmbed)
 
             # mention members queued up for the next
             mentions = self.queue.rounds[0].bosses[self.queue.currentBoss - 1].names
@@ -140,12 +144,14 @@ class CB(commands.Cog):
                     for emoji in self.emojis:
                         await message.add_reaction(emoji)
 
+            self.queue.updateTier()
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
             # edit current boss and round message
+            newCounterEmbed = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier,
+                                               self.activeDate)
             message = await self.client.get_channel(self.activeChannel).fetch_message(self.activeRoundCounter)
-            await message.edit(content=str(f'=== CURRENT ROUND: {self.queue.currentRound} ===\n'
-                                           f'=== CURRENT BOSS: {self.queue.currentBoss} ==='))
+            await message.edit(embed=newCounterEmbed)
 
             # mention members queued up for the next
             mentions = self.queue.rounds[0].bosses[self.queue.currentBoss - 1].names
@@ -165,7 +171,6 @@ class CB(commands.Cog):
         message = await self.client.get_channel(self.activeChannel).fetch_message(self.queue.rounds[int(messageNum) - 1].messageId)
         await message.edit(embed=newEmbed)
 
-
     def updateQueue(self, user, emoji, messageId, add=True):
         roundNum = 0
         for i in range(len(self.queue.rounds)):
@@ -173,7 +178,7 @@ class CB(commands.Cog):
             if round.messageId == messageId:
                 for boss in range(5):
                     if str(emoji) == self.emojis[boss]:
-                        if add == True and user.mention not in round.bosses[boss].names:
+                        if add and user.mention not in round.bosses[boss].names:
                             round.bosses[boss].names.append(user.mention)
                         else:
                             round.bosses[boss].names.remove(user.mention)
@@ -181,13 +186,12 @@ class CB(commands.Cog):
 
         return roundNum
 
-
     async def updateQueueTable(self, payload, add=True):
         msg = await self.client.get_channel(payload.channel_id).fetch_message(payload.message_id)
         user = await msg.guild.fetch_member(payload.user_id)
         expectedRole = discord.utils.get(msg.guild.roles, name='Shuujin')
         if payload.channel_id == self.activeChannel and not user.bot and hasRole(expectedRole, user):
-            if add == True:
+            if add:
                 roundNum = self.updateQueue(user, payload.emoji, payload.message_id)
             else:
                 roundNum = self.updateQueue(user, payload.emoji, payload.message_id, False)
@@ -202,6 +206,7 @@ def hasRole(expectedRole, user):
         if role == expectedRole:
             return True
     return False
+
 
 def makeQueueEmbed(round, roundNum):
     bossNum = 0
@@ -221,6 +226,14 @@ def makeQueueEmbed(round, roundNum):
         bossNum += 1
     return embed
 
+
+def makeCounterEmbed(roundNum, bossNum, tierNum, date):
+    embed = discord.Embed(color=0x6d2c2c)
+    embed.add_field(name=f"CB {date}", value=f'\u200b', inline=False)
+    embed.add_field(name="Current Round", value=roundNum, inline=True)
+    embed.add_field(name="Current Boss", value=bossNum, inline=True)
+    embed.add_field(name="Current Tier", value=tierNum, inline=True)
+    return embed
 
 def setup(client):
     client.add_cog(CB(client))
