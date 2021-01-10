@@ -44,19 +44,19 @@ class CB(commands.Cog):
             if hour == '05' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 1')
                 await channel.send(role.mention)
-                await channel.send('!cbtime')
+                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
             if hour == '08' and minute == '30':
                 role = discord.utils.get(channel.guild.roles, name='Group 1.5')
                 await channel.send(role.mention)
-                await channel.send('!cbtime')
+                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
             if hour == '13' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 2')
                 await channel.send(role.mention)
-                await channel.send('!cbtime')
+                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
             if hour == '19' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 3')
                 await channel.send(role.mention)
-                await channel.send('!cbtime')
+                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
 
     @groupPing.before_loop
     async def beforeGroupPing(self):
@@ -101,6 +101,7 @@ class CB(commands.Cog):
     async def end(self, ctx):
         self.queue = None
         self.isActiveCB = False
+        self.groupPing.cancel()
         await ctx.message.channel.purge(limit=10)
 
     @commands.command()
