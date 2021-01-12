@@ -13,7 +13,7 @@ class CB(commands.Cog):
         self.activeDate = None
         self.activeChannel = None
         self.activeRoundCounter = None
-        self.killCha    nnel = None
+        self.killChannel = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 
