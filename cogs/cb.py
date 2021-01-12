@@ -224,9 +224,12 @@ class CB(commands.Cog):
 
     @commands.command()
     async def ovf(self, ctx, damage, remainingHp):
-        formattedDamage = formatInt(damage)
-        formattedHp = formatInt(remainingHp)
+        formattedDamage = await formatNumber(damage)
+        formattedHp = await formatNumber(remainingHp)
         overflowTime = ((formattedDamage - formattedHp) / formattedDamage) * 90 + 20
+        if overflowTime < 0:
+            overflowTime = 0
+
         await ctx.send(overflowTime)
 
     # class methods
@@ -268,13 +271,13 @@ def hasRole(expectedRole, user):
     return False
 
 
-def formatInt(string):
+async def formatNumber(string):
     if string[-1] == 'M' or string[-1] == 'm':
-        return int(string[:-1] * 1000000)
+        return float(string[:-1]) * 1000000
     elif string[-1] == 'K' or string[-1] == 'k':
-        return int(string[:-1] * 1000)
+        return float(string[:-1]) * 1000
     else:
-        return int(string)
+        return float(string)
 
 
 def makeQueueEmbed(round, roundNum):
