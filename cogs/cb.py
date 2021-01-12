@@ -13,7 +13,7 @@ class CB(commands.Cog):
         self.activeDate = None
         self.activeChannel = None
         self.activeRoundCounter = None
-        self.killChannel = None
+        self.killCha    nnel = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 
@@ -222,6 +222,13 @@ class CB(commands.Cog):
             self.queue.rounds[int(messageNum) - 1].messageId)
         await message.edit(embed=newEmbed)
 
+    @commands.command()
+    async def ovf(self, ctx, damage, remainingHp):
+        formattedDamage = formatInt(damage)
+        formattedHp = formatInt(remainingHp)
+        overflowTime = ((formattedDamage - formattedHp) / formattedDamage) * 90 + 20
+        await ctx.send(overflowTime)
+
     # class methods
     def updateQueue(self, user, emoji, messageId, add=True):
         roundNum = 0
@@ -259,6 +266,15 @@ def hasRole(expectedRole, user):
         if role == expectedRole:
             return True
     return False
+
+
+def formatInt(string):
+    if string[-1] == 'M' or string[-1] == 'm':
+        return int(string[:-1] * 1000000)
+    elif string[-1] == 'K' or string[-1] == 'k':
+        return int(string[:-1] * 1000)
+    else:
+        return int(string)
 
 
 def makeQueueEmbed(round, roundNum):
