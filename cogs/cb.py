@@ -224,8 +224,8 @@ class CB(commands.Cog):
 
     @commands.command()
     async def ovf(self, ctx, damage, remainingHp):
-        formattedDamage = formatNumber(damage)
-        formattedHp = formatNumber(remainingHp)
+        formattedDamage = await formatNumber(damage)
+        formattedHp = await formatNumber(remainingHp)
         overflowTime = ((formattedDamage - formattedHp) / formattedDamage) * 90 + 20
         if overflowTime < 0:
             overflowTime = 0
@@ -271,7 +271,7 @@ def hasRole(expectedRole, user):
     return False
 
 
-def formatNumber(string):
+async def formatNumber(string):
     if string[-1] == 'M' or string[-1] == 'm':
         return float(string[:-1]) * 1000000
     elif string[-1] == 'K' or string[-1] == 'k':
