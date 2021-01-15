@@ -41,22 +41,18 @@ class CB(commands.Cog):
         minute = currentTime.strftime('%M')
         if self.killChannel is not None:
             channel = self.client.get_channel(self.killChannel)
+            role = None
             if hour == '05' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 1')
-                await channel.send(role.mention)
-                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
             if hour == '08' and minute == '30':
                 role = discord.utils.get(channel.guild.roles, name='Group 1.5')
-                await channel.send(role.mention)
-                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
             if hour == '13' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 2')
-                await channel.send(role.mention)
-                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
             if hour == '19' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 3')
-                await channel.send(role.mention)
-                await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
+
+            await channel.send(role.mention)
+            await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
 
     @groupPing.before_loop
     async def beforeGroupPing(self):
@@ -229,8 +225,9 @@ class CB(commands.Cog):
         overflowTime = ((formattedDamage - formattedHp) / formattedDamage) * 90 + 20
         if overflowTime < 0:
             overflowTime = 0
-
-        await ctx.send(overflowTime)
+        if overflowTime > 90:
+            overflow = 90
+        await ctx.send(f'{round(overflowTime, 2)}s')
 
     # class methods
     def updateQueue(self, user, emoji, messageId, add=True):
