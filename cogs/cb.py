@@ -45,11 +45,11 @@ class CB(commands.Cog):
             if hour == '05' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 1')
             if hour == '08' and minute == '30':
-                role = discord.utils.get(channel.guild.roles, name='Group 1.5')
-            if hour == '13' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 2')
-            if hour == '19' and minute == '00':
+            if hour == '13' and minute == '00':
                 role = discord.utils.get(channel.guild.roles, name='Group 3')
+            if hour == '19' and minute == '00':
+                role = discord.utils.get(channel.guild.roles, name='Group 4')
 
             await channel.send(role.mention)
             await channel.send('https://cdn.discordapp.com/attachments/163948097330741248/759655070295654430/images_-_2020-08-28T104748.758.jpg')
@@ -226,7 +226,7 @@ class CB(commands.Cog):
         if overflowTime < 0:
             overflowTime = 0
         if overflowTime > 90:
-            overflow = 90
+            overflowTime = 90
         await ctx.send(f'{round(overflowTime, 2)}s')
 
     # class methods
