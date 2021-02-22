@@ -17,14 +17,14 @@ class CB(commands.Cog):
         self.killChannel = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
-        #self.db = Sql()
+        self.db = Sql()
 
     # events
-    #@commands.Cog.listener()
-    #async def on_ready(self):
-        #self.db.connect()
-        #template = self.db.getData()
-        #self.db.close()
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.db.connect()
+        template = self.db.getData()
+        self.db.close()
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
