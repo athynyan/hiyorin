@@ -32,6 +32,5 @@ class Sql:
         self.connect()
         if templateType is 'Q':
             template = queueTemplate(True, 'January 2021', '792840405217050654', '813362652331114496', 3, 5, 1, '286838882392080384')
-
         self.close()
         return template
