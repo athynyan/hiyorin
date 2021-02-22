@@ -139,7 +139,6 @@ class CB(commands.Cog):
         if not self.qtemp:
             self.load_data()
 
-
         if self.isActiveCB:
             if self.killChannel is None:
                 self.killChannel = ctx.message.channel.id
@@ -304,6 +303,7 @@ class CB(commands.Cog):
             print(f'reaction caught, message: {msg.id}, user: {user.id}, emoji: {payload.emoji}')
 
     def load_data(self):
+        self.qtemp = self.db.getData('Q')
         self.isActiveCB = self.qtemp.active
         self.activeDate = self.qtemp.date
         self.activeChannel = self.qtemp.channel
