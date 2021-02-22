@@ -22,8 +22,8 @@ class CB(commands.Cog):
         self.db = None
 
     # events
-    @commands.Cog.listener()
-    async def on_ready(self):
+    @commands.Cog.listener('on_ready')
+    async def load_data(self):
         self.db = Sql()
         self.qtemp = self.db.getData('Q')
 
@@ -35,7 +35,6 @@ class CB(commands.Cog):
         print('Data loaded.')
 
         self.updateDb.start()
-
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
