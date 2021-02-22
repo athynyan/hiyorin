@@ -137,7 +137,7 @@ class CB(commands.Cog):
                     newRound.messageId = message.id
                     self.queue.rounds.append(newRound)
 
-                if self.queue.currentRound <= 45
+                if self.queue.currentRound <= 45:
                     # remove oldest round embed
                     message = await self.client.get_channel(self.activeChannel).fetch_message(
                         self.queue.rounds[0].messageId)
