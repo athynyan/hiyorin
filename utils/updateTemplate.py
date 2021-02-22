@@ -10,6 +10,6 @@ class queueTemplate:
         self.kill = kill
 
 class roundTemplate:
-    def __init__(self, messageId, data):
+    def __init__(self, messageId):
         self.messageId = messageId
-        self.data = data
+        self.data = None

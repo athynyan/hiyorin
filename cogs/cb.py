@@ -17,14 +17,25 @@ class CB(commands.Cog):
         self.killChannel = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
-        self.db = Sql()
+        self.qtemp = None
+        self.rtemps = []
+        self.db = None
 
     # events
     @commands.Cog.listener()
     async def on_ready(self):
-        self.db.connect()
-        template = self.db.getData()
-        self.db.close()
+        self.db = Sql()
+        self.qtemp = self.db.getData('Q')
+
+        self.isActiveCB = self.qtemp.active
+        self.activeDate = self.qtemp.date
+        self.activeChannel = self.qtemp.channel
+        self.activeRoundCounter = self.qtemp.counter
+        self.killChannel = self.qtemp.kill
+        print('Data loaded.')
+
+        self.updateDb.start()
+
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -35,6 +46,29 @@ class CB(commands.Cog):
         await self.updateQueueTable(payload, False)
 
     # tasks
+    @task.loop(minutes=60.0)
+    async def updateDb(self):
+        self.qtemp.active = self.isActiveCB
+        self.qtemp.date = self.activeDate
+        self.qtemp.channel = self.activeChannel
+        self.qtemp.counter = self.activeRoundCounter
+        self.qtemp.kill = self.killChannel
+
+        if self.queue:
+            self.qtemp.currentTier = self.queue.currentTier
+            self.qtemp.currentRound = self.queue.currentRound
+            self.qtemp.currentBoss = self.queue.currentBoss
+
+            if self.queue.rounds:
+                for round in self.queue.rounds:
+                    if self.rtemps:
+                        self.rtemps.clear()
+                    self.rtemps.append(roundTemplate(round.messageId))
+
+        self.db.update(self.qtemp)
+        if self.rtemp:
+            self.db.update(self.rtemps)
+
     @tasks.loop(seconds=1.0, count=1800)
     async def syncWithClock(self):
         currentTime = datetime.now(pytz.timezone('Japan'))
@@ -150,6 +184,9 @@ class CB(commands.Cog):
 
             self.queue.updateTier()
             await ctx.send(f'B{self.queue.currentBoss} is up.')
+            if self.queue.currentRound > 45:
+                role = discord.utils.get(channel.guild.roles, name=f'Tier 5 Boss {self.queue.currentBoss}')
+                await ctx.send(role.mention)
 
             # edit current boss and round message
             newCounterEmbed = makeCounterEmbed(self.queue.currentRound, self.queue.currentBoss, self.queue.currentTier,
@@ -161,6 +198,9 @@ class CB(commands.Cog):
             mentions = self.queue.rounds[0].bosses[self.queue.currentBoss - 1].names
             if mentions:
                 await ctx.send(', '.join(mentions))
+
+
+
 
     @commands.command()
     @commands.has_role('Labyrinth Crepe Shop')

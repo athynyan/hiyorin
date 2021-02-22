@@ -1,11 +1,11 @@
 import psycopg2
 import os
-from utils.updateTemplate import queueTemplate
+from utils.updateTemplate import queueTemplate, roundTemplate
 
 class Sql:
     def __init__(self):
-        DATABASE_URL = os.environ['DATABASE_URL']
-        conn = None
+        self.DATABASE_URL = os.environ['DATABASE_URL']
+        self.conn = None
 
     def connect(self):
         try:
@@ -20,7 +20,18 @@ class Sql:
             print('No ongoing connection.')
 
     def update(self, template):
-        cursor = conn.cursor()
+        self.connect()
+        cursor = self.conn.cursor()
 
-    def getData(self):
-        return
+
+
+        self.close()
+
+    def getData(self, templateType):
+        template = None
+        self.connect()
+        if templateType is 'Q':
+            template = queueTemplate(True, 'January 2021', '792840405217050654', '813362652331114496', 3, 5, 1, '286838882392080384')
+
+        self.close()
+        return template
