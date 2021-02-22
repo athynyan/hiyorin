@@ -46,7 +46,7 @@ class CB(commands.Cog):
         await self.updateQueueTable(payload, False)
 
     # tasks
-    @task.loop(minutes=60.0)
+    @tasks.loop(minutes=60.0)
     async def updateDb(self):
         self.qtemp.active = self.isActiveCB
         self.qtemp.date = self.activeDate
