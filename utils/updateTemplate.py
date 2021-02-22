@@ -1,5 +1,5 @@
 class queueTemplate:
-    def __init__(active, date, channel, counter, tier, round, boss, kill):
+    def __init__(self, active, date, channel, counter, tier, round, boss, kill):
         self.active = active
         self.date = date
         self.channel = channel
@@ -8,3 +8,8 @@ class queueTemplate:
         self.currentRound = round
         self.currentBoss = boss
         self.kill = kill
+
+class roundTemplate:
+    def __init__(self, messageId, data):
+        self.messageId = messageId
+        self.data = data

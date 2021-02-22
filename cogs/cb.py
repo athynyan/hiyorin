@@ -5,7 +5,7 @@ from models.cb.rounds import Round
 from discord.ext import commands, tasks
 from datetime import datetime
 from utils.sql import Sql
-from utils.updateTemplate import queueTemplate
+from utils.updateTemplate import queueTemplate, roundTemplate
 
 class CB(commands.Cog):
     def __init__(self, client):
@@ -126,25 +126,28 @@ class CB(commands.Cog):
                 self.queue.currentBoss = 1
                 await ctx.send(f'Proceeding to round {self.queue.currentRound}.')
 
-                # add next round
-                newRound = Round()
-                newEmbed = makeQueueEmbed(newRound, self.queue.currentRound + 2)
-                channel = self.client.get_channel(self.activeChannel)
-                message = await channel.send(embed=newEmbed)
-                for emoji in self.emojis:
-                    await message.add_reaction(emoji)
-                newRound.messageId = message.id
-                self.queue.rounds.append(newRound)
+                if self.queue.currentRound <= 43:
+                    # add next round
+                    newRound = Round()
+                    newEmbed = makeQueueEmbed(newRound, self.queue.currentRound + 2)
+                    channel = self.client.get_channel(self.activeChannel)
+                    message = await channel.send(embed=newEmbed)
+                    for emoji in self.emojis:
+                        await message.add_reaction(emoji)
+                    newRound.messageId = message.id
+                    self.queue.rounds.append(newRound)
 
-                # remove oldest round embed
-                message = await self.client.get_channel(self.activeChannel).fetch_message(
-                    self.queue.rounds[0].messageId)
-                await message.delete()
-                self.queue.rounds.pop(0)
+                if self.queue.currentRound <= 45
+                    # remove oldest round embed
+                    message = await self.client.get_channel(self.activeChannel).fetch_message(
+                        self.queue.rounds[0].messageId)
+                    await message.delete()
+                    self.queue.rounds.pop(0)
 
             else:
                 # increment boss counter by 1
                 self.queue.currentBoss += 1
+
             self.queue.updateTier()
             await ctx.send(f'B{self.queue.currentBoss} is up.')
 
