@@ -20,8 +20,8 @@ class CB(commands.Cog):
         self.db = Sql()
 
     # events
-    @commands.Cog.listener()
-    async def on_ready(self):
+    #@commands.Cog.listener()
+    #async def on_ready(self):
         #self.db.connect()
         #template = self.db.getData()
         #self.db.close()
