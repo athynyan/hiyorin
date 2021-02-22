@@ -4,7 +4,8 @@ from models.cb.queue import Queue
 from models.cb.rounds import Round
 from discord.ext import commands, tasks
 from datetime import datetime
-
+from utils.sql import Sql
+from utils.updateTemplate import queueTemplate
 
 class CB(commands.Cog):
     def __init__(self, client):
@@ -16,8 +17,15 @@ class CB(commands.Cog):
         self.killChannel = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
+        #self.db = Sql()
 
     # events
+    #@commands.Cog.listener()
+    #async def on_ready(self):
+        #self.db.connect()
+        #template = self.db.getData()
+        #self.db.close()
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         await self.updateQueueTable(payload)
@@ -95,8 +103,13 @@ class CB(commands.Cog):
     @commands.command()
     @commands.has_role('Labyrinth Crepe Shop')
     async def end(self, ctx):
+        for round in self.queue.rounds:
+            message = await self.client.get_channel(self.activeChannel).fetch_message(
+                round.messageId)
+            await message.delete()
         self.queue = None
         self.isActiveCB = False
+        self.syncWithClock.cancel()
         self.groupPing.cancel()
         await ctx.message.channel.purge(limit=10)
 
