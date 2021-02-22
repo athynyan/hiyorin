@@ -17,7 +17,7 @@ class CB(commands.Cog):
         self.killChannel = None
         self.isActiveCB = False
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
-        self.db = Sql()
+        #self.db = Sql()
 
     # events
     #@commands.Cog.listener()
