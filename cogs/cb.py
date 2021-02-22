@@ -19,23 +19,9 @@ class CB(commands.Cog):
         self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
         self.qtemp = None
         self.rtemps = []
-        self.db = None
+        self.db = Sql()
 
     # events
-    @commands.Cog.listener('on_ready')
-    async def load_data(self):
-        self.db = Sql()
-        self.qtemp = self.db.getData('Q')
-
-        self.isActiveCB = self.qtemp.active
-        self.activeDate = self.qtemp.date
-        self.activeChannel = self.qtemp.channel
-        self.activeRoundCounter = self.qtemp.counter
-        self.killChannel = self.qtemp.kill
-        print('Data loaded.')
-
-        self.updateDb.start()
-
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         await self.updateQueueTable(payload)
@@ -150,6 +136,10 @@ class CB(commands.Cog):
     @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
     @commands.cooldown(1, 15)
     async def kill(self, ctx): # TODO: change queue table generation after round 45
+        if not self.qtemp:
+            self.load_data()
+
+
         if self.isActiveCB:
             if self.killChannel is None:
                 self.killChannel = ctx.message.channel.id
@@ -197,9 +187,6 @@ class CB(commands.Cog):
             mentions = self.queue.rounds[0].bosses[self.queue.currentBoss - 1].names
             if mentions:
                 await ctx.send(', '.join(mentions))
-
-
-
 
     @commands.command()
     @commands.has_role('Labyrinth Crepe Shop')
@@ -316,6 +303,14 @@ class CB(commands.Cog):
             await msg.edit(embed=newEmbed)
             print(f'reaction caught, message: {msg.id}, user: {user.id}, emoji: {payload.emoji}')
 
+    def load_data(self):
+        self.isActiveCB = self.qtemp.active
+        self.activeDate = self.qtemp.date
+        self.activeChannel = self.qtemp.channel
+        self.activeRoundCounter = self.qtemp.counter
+        self.killChannel = self.qtemp.kill
+        print('Data loaded.')
+        self.updateDb.start()
 
 # global functions
 def hasRole(expectedRole, user):
