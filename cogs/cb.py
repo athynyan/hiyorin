@@ -22,9 +22,9 @@ class CB(commands.Cog):
     # events
     @commands.Cog.listener()
     async def on_ready(self):
-        self.db.connect()
-        template = self.db.getData()
-        self.db.close()
+        #self.db.connect()
+        #template = self.db.getData()
+        #self.db.close()
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
