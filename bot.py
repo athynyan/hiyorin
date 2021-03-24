@@ -33,6 +33,9 @@ async def on_raw_reaction_add(payload):
     if user.bot:  # check if reacted user is a bot
         return
 
+    if 'message_id' not in queue: # check if key exists
+        return
+
     # loop to check for matching message
     for message_id in queue['message_id']:
         if payload.message_id == message_id:
@@ -66,6 +69,9 @@ async def on_raw_reaction_remove(payload):
     boss_index = get_boss_index(payload.emoji)  # convert emoji to integer
 
     if user.bot:  # check if reacted user is a bot
+        return
+
+    if 'message_id' not in queue: # check if key exists
         return
 
     for message_id in queue['message_id']:
@@ -331,7 +337,7 @@ def increment_current(round, boss):
 
     return current_round, current_tier, current_boss
 
-
+# calculates tier depending on the round given
 def calculate_tier(round):
     if round >= 45:
         return 5
@@ -344,7 +350,7 @@ def calculate_tier(round):
     else:
         return 1
 
-
+# update database
 def update_db():
     collection = get_collection()
 
@@ -352,7 +358,7 @@ def update_db():
     if queue:
         collection.insert_one(queue)
 
-
+# load data from database
 def load_from_db():
     collection = get_collection()
     global queue
@@ -362,7 +368,7 @@ def load_from_db():
         if result:
             queue = result
 
-
+# get collection from database
 def get_collection():
     mongo_client = MongoClient(os.getenv('DATABASE_URL'))
     db = mongo_client[os.getenv('DATABASE_NAME')]
