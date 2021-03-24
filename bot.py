@@ -230,6 +230,8 @@ async def next(ctx, round=1):
 
         # change round in the counter
         embed.set_field_at(1, name='Current Round', value=current_round, inline=True)
+        embed.set_field_at(2, name='Current Tier', value=calculate_tier(current_round), inline=True)
+        embed.set_field_at(3, name='Current Boss', value='1', inline=False)
         await msg.edit(embed=embed)
 
         # create new message and add reactions
