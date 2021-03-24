@@ -1,11 +1,10 @@
 import os
 import datetime
 import discord
-from dotenv import load_dotenv
 from discord.ext import tasks, commands
 from pymongo import MongoClient
 
-load_dotenv()
+
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 queue = {}
 client = commands.Bot(command_prefix=os.getenv('PREFIX'))
