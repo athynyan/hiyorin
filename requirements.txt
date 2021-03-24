@@ -1,3 +1,2 @@
 discord
-pytz
-psycopg2
+pymongo
