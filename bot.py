@@ -4,7 +4,6 @@ import discord
 from discord.ext import tasks, commands
 from pymongo import MongoClient
 
-
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 queue = {}
 client = commands.Bot(command_prefix=os.getenv('PREFIX'))
@@ -33,7 +32,7 @@ async def on_raw_reaction_add(payload):
     if user.bot:  # check if reacted user is a bot
         return
 
-    if 'message_id' not in queue: # check if key exists
+    if 'message_id' not in queue:  # check if key exists
         return
 
     # loop to check for matching message
@@ -71,7 +70,7 @@ async def on_raw_reaction_remove(payload):
     if user.bot:  # check if reacted user is a bot
         return
 
-    if 'message_id' not in queue: # check if key exists
+    if 'message_id' not in queue:  # check if key exists
         return
 
     for message_id in queue['message_id']:
@@ -108,23 +107,22 @@ async def on_raw_reaction_remove(payload):
 # starts the queue
 @client.command()
 @commands.check_any(commands.has_role('Labyrinth Crepe Shop'))
-async def start(ctx):
+async def start(ctx, numberOfTables=3):
     # check if queue is active
     if is_active():
         return
 
     # initialization of local variables
-    message_count = 3  # number of queue tables
     messages = []  # variable to store the message of said tables
 
     # clear channel messages
-    await ctx.message.channel.purge(limit=10)
+    await ctx.message.channel.purge(limit=100)
 
     # make boss counter
     counter = await ctx.send(embed=make_counter())
 
     # make queue tables depending on message counts
-    for i in range(message_count):
+    for i in range(numberOfTables):
         message = await ctx.send(embed=make_queue_table(i + 1))
         messages.append(message.id)
 
@@ -137,6 +135,7 @@ async def start(ctx):
     queue['channel_id'] = ctx.message.channel.id
     queue['counter_id'] = counter.id
     queue['message_id'] = messages
+    queue['number_of_tables'] = numberOfTables
     update_db()
 
 
@@ -177,7 +176,7 @@ async def kill(ctx):
         await ctx.send(f'Proceeding to round {current_round}.')
 
         # create new message and add reactions
-        new_message = await channel.send(embed=make_queue_table(current_round + 2))  # TODO: remove hardcode
+        new_message = await channel.send(embed=make_queue_table(current_round + queue['number_of_tables'] - 1))
         for reaction in reactions:
             await new_message.add_reaction(reaction)
 
@@ -235,7 +234,7 @@ async def next(ctx, round=1):
         await msg.edit(embed=embed)
 
         # create new message and add reactions
-        new_message = await channel.send(embed=make_queue_table(current_round + 2))
+        new_message = await channel.send(embed=make_queue_table(current_round + queue['number_of_tables'] - 1))
         for reaction in reactions:
             await new_message.add_reaction(reaction)
 
@@ -259,7 +258,7 @@ async def next(ctx, round=1):
         await msg.edit(embed=embed)
 
         # make new queue tables
-        for i in range(3):  # TODO: remove hardcode
+        for i in range(queue['number_of_tables']):
             # create new message
             channel = client.get_channel(queue['channel_id'])
             new_message = await channel.send(embed=make_queue_table(round + i))
@@ -281,6 +280,40 @@ async def next(ctx, round=1):
     update_db()
 
     await ctx.send('B1 up.')
+
+
+@client.command()
+@commands.check_any(commands.has_role('Labyrinth Crepe Shop'))
+async def setq(ctx, numberOfTables: int):
+    if not numberOfTables:
+        return
+
+    if numberOfTables < 0:
+        return
+
+    if not queue:
+        return
+
+    if numberOfTables < queue['number_of_tables']:
+        for i in range(queue['number_of_tables']-1, numberOfTables-1, -1):
+            message = await client.get_channel(queue['channel_id']).fetch_message(queue['message_id'][i])
+            await message.delete()
+            queue['message_id'].pop()
+    else:
+        channel = client.get_channel(queue['channel_id'])
+        msg = await channel.fetch_message(queue['counter_id'])
+        current_round = msg.embeds[0].fields[1].value
+
+        for i in range(queue['number_of_tables'], numberOfTables):
+            new_message = await channel.send(embed=make_queue_table(int(current_round) + i))
+            for reaction in reactions:
+                await new_message.add_reaction(reaction)
+
+            queue['message_id'].append(new_message.id)
+
+    queue['number_of_tables'] = numberOfTables
+    await ctx.send(f'Set number of queue tables to {numberOfTables}.')
+    update_db()
 
 
 # make counter embed
@@ -339,18 +372,20 @@ def increment_current(round, boss):
 
     return current_round, current_tier, current_boss
 
+
 # calculates tier depending on the round given
 def calculate_tier(round):
     if round >= 45:
         return 5
-    elif round >= 35:
+    if round >= 35:
         return 4
-    elif round >= 11:
+    if round >= 11:
         return 3
-    elif round >= 4:
+    if round >= 4:
         return 2
-    else:
-        return 1
+
+    return 1
+
 
 # update database
 def update_db():
@@ -359,6 +394,7 @@ def update_db():
     collection.delete_one({'active': True})
     if queue:
         collection.insert_one(queue)
+
 
 # load data from database
 def load_from_db():
@@ -369,6 +405,7 @@ def load_from_db():
     for result in results:
         if result:
             queue = result
+
 
 # get collection from database
 def get_collection():
