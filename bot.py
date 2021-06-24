@@ -375,9 +375,9 @@ def increment_current(round, boss):
 
 # calculates tier depending on the round given
 def calculate_tier(round):
-    if round >= 45:
+    if round >= 41:
         return 5
-    if round >= 35:
+    if round >= 31:
         return 4
     if round >= 11:
         return 3
