@@ -353,16 +353,14 @@ def format_tl_input(input_string):
             if character[1] == words[0]:
                 formatted_input[1][i] = formatted_input[1][i].replace(character[1], character[2])
         for i in range(len(formatted_input[2])):
-            if formatted_input[0][2] == formatted_input[2][i]:
-                formatted_input[2][i] = formatted_input[2][i].replace(formatted_input[0][2], '**BOSS UB**')
-            if character[1] in formatted_input[2][i]:
+            words = formatted_input[2][i].split('（')
+            if character[1] == words[0]:
                 formatted_input[2][i] = formatted_input[2][i].replace(character[1], character[2])
 
     # mapping alt versions to english
     for alt in alt_dict:
         for i in range(len(formatted_input[1])):
-            words = formatted_input[1][i].split('（')
-            if alt[1] == words[0]:
+            if alt[1] in formatted_input[1][i]:
                 formatted_input[1][i] = formatted_input[1][i].replace(alt[1], alt[2])
         for i in range(len(formatted_input[2])):
             if alt[1] in formatted_input[2][i]:
@@ -392,7 +390,10 @@ def format_tl_input(input_string):
         if match:
             timeline.append(' '.join(temporary_list))
             temporary_list.clear()
-        temporary_list.append(element)
+        if element == formatted_input[0][2]:
+            temporary_list.append('**BOSS UB**')
+        else:
+            temporary_list.append(element)
 
     return '\n '.join(general_info), '\n '.join(party_setup), '\n '.join(timeline), ''
 
