@@ -492,7 +492,7 @@ def get_collection():
     return db[os.getenv('DATABASE_COLLECTION')]
 
 def get_character_dicts():
-    DATABASE_URL = os.getenv('HEROKU_POSTGRESQL_YELLOW_URL')
+    DATABASE_URL = os.getenv('HEROKU_POSTGRESQL_MAUVE_URL')
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
     cur = conn.cursor()
