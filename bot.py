@@ -4,6 +4,7 @@ import discord
 from discord.ext import tasks, commands
 from pymongo import MongoClient
 import psycopg2
+import re
 
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
 queue = {}
