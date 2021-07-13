@@ -315,6 +315,82 @@ async def setq(ctx, numberOfTables: int):
     await ctx.send(f'Set number of queue tables to {numberOfTables}.')
     update_db()
 
+@client.command()
+async def tl(ctx, *input_string):
+    await ctx.message.channel.send(embed=make_tl_embed(input_string))
+    await ctx.message.delete()
+
+
+def make_tl_embed(input_string):
+    general, party, timeline, additional_info = format_tl_input(input_string)
+
+    embed = discord.Embed(color=0x657ed4)
+    embed.add_field(name='General Info', value=general, inline=False)
+    embed.add_field(name='Party Setup', value=party, inline=False)
+    embed.add_field(name='Timeline', value=timeline, inline=False)
+    if additional_info:
+        embed.add_field(name='Additional Info', value=additional_info, inline=False)
+    return embed
+
+
+def format_tl_input(input_string):
+    formatted_input = []
+    general_info = []
+    party_setup = []
+    timeline = []
+    character_dict, alt_dict = get_character_dicts()
+
+    # split input_string list into sublists and save to formatted_input list
+    for sublist in [subl.split(' ') for subl in ' '.join(input_string).split('----')]:
+        formatted_input.append(list(filter(None, sublist)))
+
+    # mapping character names to english
+    for character in character_dict:
+        for i in range(len(formatted_input[1])):
+            if character[1] in formatted_input[1][i]:
+                formatted_input[1][i] = formatted_input[1][i].replace(character[1], character[2])
+        for i in range(len(formatted_input[2])):
+            if formatted_input[0][2] == formatted_input[2][i]:
+                formatted_input[2][i] = formatted_input[2][i].replace(formatted_input[0][2], '**BOSS UB**')
+            if character[1] in formatted_input[2][i]:
+                formatted_input[2][i] = formatted_input[2][i].replace(character[1], character[2])
+
+    # mapping alt versions to english
+    for alt in alt_dict:
+        for i in range(len(formatted_input[1])):
+            if alt[1] in formatted_input[1][i]:
+                formatted_input[1][i] = formatted_input[1][i].replace(alt[1], alt[2])
+        for i in range(len(formatted_input[2])):
+            if alt[1] in formatted_input[2][i]:
+                formatted_input[2][i] = formatted_input[2][i].replace(alt[1], alt[2])
+
+    # General Info
+    tier = [s for s in formatted_input[0] if "段階目" in s].pop().removesuffix('段階目')
+    damage = [s for s in formatted_input[0] if "ダメージ" in s].pop().removesuffix('ダメージ')
+    general_info.append(f'Boss: {formatted_input[0][2]}')
+    general_info.append(f'Tier: {tier}')
+    general_info.append(f'Damage: {damage}')
+
+    # Party Setup
+    formatted_input[1].pop(0)
+    chunks = [formatted_input[1][x:x + 4] for x in range(0, len(formatted_input[1]), 4)]
+    for chunk in chunks:
+        chunk.reverse()
+        party_setup.append(' '.join(chunk))
+
+    # Timeline
+    for i in range(3):
+        formatted_input[2].pop(0)
+    time_regex = re.compile('0((1:([0-2][0-9]|30))|(0:[0-5][0-9]))')
+    temporary_list = []
+    for element in formatted_input[2]:
+        match = time_regex.search(element)
+        if match:
+            timeline.append(' '.join(temporary_list))
+            temporary_list.clear()
+        temporary_list.append(element)
+
+    return '\n '.join(general_info), '\n '.join(party_setup), '\n '.join(timeline), ''
 
 # make counter embed
 def make_counter():
@@ -413,6 +489,17 @@ def get_collection():
     db = mongo_client[os.getenv('DATABASE_NAME')]
     return db[os.getenv('DATABASE_COLLECTION')]
 
+def get_character_dicts():
+    DATABASE_URL = os.getenv('HEROKU_POSTGRESQL_YELLOW_URL')
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+
+    cur = conn.cursor()
+    cur.execute("select * from unit_name")
+    character_dict = cur.fetchall()
+
+    cur.execute("select * from alt_version_name")
+    alt_dict = cur.fetchall()
+    return character_dict, alt_dict
 
 # run the discord client
 client.run(os.getenv('TOKEN'))
