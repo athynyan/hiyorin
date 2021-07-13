@@ -349,7 +349,8 @@ def format_tl_input(input_string):
     # mapping character names to english
     for character in character_dict:
         for i in range(len(formatted_input[1])):
-            if character[1] in formatted_input[1][i]:
+            words = formatted_input[1][i].split('（')
+            if character[1] == words[0]:
                 formatted_input[1][i] = formatted_input[1][i].replace(character[1], character[2])
         for i in range(len(formatted_input[2])):
             if formatted_input[0][2] == formatted_input[2][i]:
@@ -360,7 +361,8 @@ def format_tl_input(input_string):
     # mapping alt versions to english
     for alt in alt_dict:
         for i in range(len(formatted_input[1])):
-            if alt[1] in formatted_input[1][i]:
+            words = formatted_input[1][i].split('（')
+            if alt[1] == words[0]:
                 formatted_input[1][i] = formatted_input[1][i].replace(alt[1], alt[2])
         for i in range(len(formatted_input[2])):
             if alt[1] in formatted_input[2][i]:
