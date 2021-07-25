@@ -278,8 +278,6 @@ async def next(ctx, round=1):
 
     update_db()
 
-    await ctx.send('B1 up.')
-
 
 @client.command()
 @commands.check_any(commands.has_role('Labyrinth Crepe Shop'))
