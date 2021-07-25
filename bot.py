@@ -156,7 +156,7 @@ async def end(ctx):
 
 # command to proceed to the next boss
 @client.command()
-@commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+@commands.check_any(commands.has_role('Labyrinth Crepe Shop'))
 @commands.cooldown(1, 15)
 async def kill(ctx):
     # check if queue is active
@@ -194,7 +194,6 @@ async def kill(ctx):
     # editing embed with new values
     embed.set_field_at(1, name='Current Round', value=current_round, inline=True)
     embed.set_field_at(2, name='Current Tier', value=current_tier, inline=True)
-    embed.set_field_at(3, name='Current Boss', value=current_boss, inline=False)
 
     # apply changes to the counter
     await msg.edit(embed=embed)
@@ -232,7 +231,6 @@ async def next(ctx, round=1):
         # change round in the counter
         embed.set_field_at(1, name='Current Round', value=current_round, inline=True)
         embed.set_field_at(2, name='Current Tier', value=calculate_tier(current_round), inline=True)
-        embed.set_field_at(3, name='Current Boss', value='1', inline=False)
         await msg.edit(embed=embed)
 
         # create new message and add reactions
@@ -256,7 +254,6 @@ async def next(ctx, round=1):
         # change values in the counter
         embed.set_field_at(1, name='Current Round', value=round, inline=True)
         embed.set_field_at(2, name='Current Tier', value=calculate_tier(round), inline=True)
-        embed.set_field_at(3, name='Current Boss', value='1', inline=False)
         await msg.edit(embed=embed)
 
         # make new queue tables
@@ -406,7 +403,6 @@ def make_counter():
     counter_embed.add_field(name=f"CB {now.strftime('%B %Y')}", value=f'\u200b', inline=False)
     counter_embed.add_field(name="Current Round", value='1', inline=True)
     counter_embed.add_field(name="Current Tier", value='1', inline=True)
-    counter_embed.add_field(name="Current Boss", value='1', inline=False)
     return counter_embed
 
 
