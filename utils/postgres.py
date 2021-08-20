@@ -3,7 +3,7 @@ import os
 
 
 def connect_to_postgres():
-    return psycopg2.connect(os.getenv('POSTGRES_URL'), sslmode='require')
+    return psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
 
 
 def get_character_dicts():
