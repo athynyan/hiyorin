@@ -1,6 +1,5 @@
 import os
 
-import discord.ext.commands.errors
 from dotenv import load_dotenv
 from discord.ext import commands
 
