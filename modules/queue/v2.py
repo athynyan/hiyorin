@@ -9,7 +9,7 @@ queue_field = {
 }
 
 
-async def start(context, queue_length):
+async def start(context):
     # GENERATES QUEUE EMBEDS AND SAVES THE MESSAGE IDS INTO A LIST
     embed_list = make_queue_embed_list()
     messages = await send_queue(context, embed_list)
@@ -18,7 +18,6 @@ async def start(context, queue_length):
     queue = {'server_id': context.message.guild.id,
              'channel_id': context.message.channel.id,
              'message_ids': messages,
-             'queue_length': queue_length,
              'new_system': True}
     add_document(queue, os.getenv('MONGO_DB_QUEUE'))
 
@@ -43,6 +42,10 @@ async def kill(context, boss, damage, done):
 
         await message.clear_reactions()
         await message.add_reaction('✅')
+        await context.message.channel.send(f'Round {new_round} for {embed.title} up.')
+
+    else:
+        await context.message.channel.send(f"{embed.title}'s remaining hp is {hp}")
 
     embed.set_field_at(queue_field['hp'], name='HP', value=str(hp), inline=False)
 

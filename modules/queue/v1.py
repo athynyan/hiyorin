@@ -5,6 +5,7 @@ from modules.reactions.queue import reaction_list
 
 
 async def start(context, queue_length):
+    # TODO: Refractor into helper module
     # GENERATES A COUNTER EMBED FOR TRACKING ROUNDS
     counter_embed = make_counter_embed()
     counter = await context.message.channel.send(embed=counter_embed)
@@ -86,3 +87,4 @@ def make_queue_embed(round):
 
 def kill():
     return None
+
