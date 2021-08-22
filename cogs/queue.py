@@ -4,6 +4,7 @@ from modules.queue import v1, v2
 from modules.helpers.checks import *
 from discord.ext import commands
 
+
 class Queue(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -37,7 +38,7 @@ class Queue(commands.Cog):
     async def start(self, ctx, queue_length=1, new_system=True):
 
         if new_system:
-            await v2.start(ctx, queue_length)
+            await v2.start(ctx)
         else:
             await v1.start(ctx, queue_length)
 

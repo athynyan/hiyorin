@@ -21,3 +21,11 @@ def get_character_dicts():
 
 def update_tl_tables():
     pass
+
+
+def get_roles_list():
+    conn = connect_to_postgres()
+    cur = conn.cursor()
+
+    cur.execute("select * from roles")
+    return cur.fetchall()
