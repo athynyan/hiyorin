@@ -1,4 +1,4 @@
-from modules.helpers.core import get_args
+from modules.helpers.queue.v2 import get_args
 from modules.reactions import queue
 from modules.queue import v1, v2
 from modules.helpers.checks import *
