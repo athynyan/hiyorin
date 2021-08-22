@@ -1,5 +1,5 @@
 from discord.ext import commands
-from modules.tl import make_tl_embed
+from modules.helpers.tl import make_tl_embed
 
 
 class Tl(commands.Cog):
