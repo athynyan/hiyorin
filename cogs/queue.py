@@ -103,7 +103,7 @@ class Queue(commands.Cog):
     @is_queue_active(True)
     async def k5(self, ctx, *args):
         damage, done = get_args(args)
-        await ctx.invoke(self.client.get_command('kill'), boss=1, damage=damage, done=done)
+        await ctx.invoke(self.client.get_command('kill'), boss=5, damage=damage, done=done)
 
     # PROCEED TO NEXT ROUND
     @commands.command()
