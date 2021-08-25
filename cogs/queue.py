@@ -55,7 +55,7 @@ class Queue(commands.Cog):
 
     # KILL COMMANDS
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def kill(self, ctx, boss=0, damage=0, done=False):
@@ -66,7 +66,7 @@ class Queue(commands.Cog):
 
     # KILL COMMANDS FOR QUEUE VERSION 2
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k1(self, ctx, *args):
@@ -74,7 +74,7 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=1, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k2(self, ctx, *args):
@@ -82,7 +82,7 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=2, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k3(self, ctx, *args):
@@ -90,7 +90,7 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=3, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k4(self, ctx, *args):
@@ -98,7 +98,7 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=4, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Shuujin'))
+    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k5(self, ctx, *args):
