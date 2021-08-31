@@ -39,12 +39,13 @@ def get_roles():
             conn.close()
 
 
-def add_role(role_id, role_name):
+def add_role(role_id, role_name, admin_role):
     conn = connect_to_postgres()
     with conn.cursor() as cur:
         try:
             cur.execute(
-                "insert into roles values (%s, %s) on conflict (role_id) do update set role_name=%s;", (role_id, role_name, role_name)
+                "insert into roles values (%s, %s, %s) on conflict (role_id) do update set role_name=%s, admin_role=%s;",
+                (role_id, role_name, admin_role, role_name, admin_role)
             )
             conn.commit()
         except (discord.ext.commands.errors.CommandInvokeError, AttributeError) as e:
