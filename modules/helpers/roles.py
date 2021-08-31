@@ -7,4 +7,4 @@ def get_args(args):
         if 'a' == arg:
             admin = True
 
-    return role_id, admin
+    return int(role_id), admin
