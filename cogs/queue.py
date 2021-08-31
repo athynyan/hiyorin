@@ -1,8 +1,11 @@
+import discord
+
 from modules.helpers.queue.v2 import get_args
 from modules.reactions import queue
 from modules.queue import v1, v2
 from modules.helpers.checks import *
 from discord.ext import commands
+from utils.postgres import add_role, remove_role, get_roles
 
 
 class Queue(commands.Cog):
@@ -55,7 +58,7 @@ class Queue(commands.Cog):
 
     # KILL COMMANDS
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
+    @can_use_command()
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def kill(self, ctx, boss=0, damage=0, done=False):
@@ -66,7 +69,7 @@ class Queue(commands.Cog):
 
     # KILL COMMANDS FOR QUEUE VERSION 2
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
+    @can_use_command()
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k1(self, ctx, *args):
@@ -74,7 +77,7 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=1, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
+    @can_use_command()
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k2(self, ctx, *args):
@@ -82,7 +85,7 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=2, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
+    @can_use_command()
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k3(self, ctx, *args):
@@ -90,7 +93,7 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=3, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
+    @can_use_command()
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k4(self, ctx, *args):
@@ -98,12 +101,40 @@ class Queue(commands.Cog):
         await ctx.invoke(self.client.get_command('kill'), boss=4, damage=damage, done=done)
 
     @commands.command()
-    @commands.check_any(commands.has_role('Labyrinth Crepe Shop'), commands.has_role('Lumen'))
+    @can_use_command()
     @commands.cooldown(1, 15)
     @is_queue_active(True)
     async def k5(self, ctx, *args):
         damage, done = get_args(args)
         await ctx.invoke(self.client.get_command('kill'), boss=5, damage=damage, done=done)
+
+    @commands.command()
+    async def rm(self, ctx, boss, member):
+        pass
+
+    @commands.command(name='addr')
+    async def add_role(self, ctx, role_mention):
+        try:
+            role = [role for role in ctx.message.guild.roles if role.id == int(role_mention[3:-1])].pop()
+            add_role(role.id, role.name)
+        except (discord.ext.commands.errors.CommandInvokeError, IndexError, AttributeError) as e:
+            print(e)
+
+    @commands.command(name='r')
+    @can_use_command()
+    async def print_role(self, ctx):
+        guild_roles = ctx.message.guild.roles
+        roles = get_roles()
+        print(roles)
+        print(guild_roles[-1].id)
+
+    @commands.command(name='rmr')
+    async def remove_role(self, ctx, role_mention):
+        try:
+            role = [role for role in ctx.message.guild.roles if role.id == int(role_mention[3:-1])].pop()
+            remove_role(role.id)
+        except (discord.ext.commands.errors.CommandInvokeError, IndexError, AttributeError) as e:
+            print(e)
 
     # PROCEED TO NEXT ROUND
     @commands.command()

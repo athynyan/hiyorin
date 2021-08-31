@@ -51,7 +51,8 @@ async def kill(context, boss, damage, done):
 
     if done:
         user_list = embed.fields[queue_field['user_list']].value.split('\n')
-        await context.message.channel.send(user_list.pop(0))
+        if '???' not in user_list:
+            await context.message.channel.send(user_list.pop(0))
         if not user_list:
             user_list.append('???')
 
