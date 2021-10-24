@@ -27,26 +27,20 @@ async def kill(context, boss, damage, done=1):
 
     embed = message.embeds[0]
 
-    hp = int(embed.fields[queue_field['hp']].value) - damage
+    # hp = int(embed.fields[queue_field['hp']].value) - damage
     tier = int(embed.fields[queue_field['current_tier']].value)
 
-    if hp <= 0 or damage <= 0:
-        new_round = int(embed.fields[queue_field['current_round']].value) + 1
-        next_tier = get_tier(new_round)
-        hp = hp_list[boss][get_tier(new_round) - 1]
+    new_round = int(embed.fields[queue_field['current_round']].value) + 1
+    next_tier = get_tier(new_round)
+    hp = hp_list[boss][get_tier(new_round) - 1]
 
-        embed.set_field_at(0, name='Current Round', value=str(new_round))
-        if tier < next_tier:
-            embed.set_field_at(queue_field['current_tier'], name='Current Tier', value=str(next_tier))
+    embed.set_field_at(0, name='Current Round', value=str(new_round))
+    if tier < next_tier:
+        embed.set_field_at(queue_field['current_tier'], name='Current Tier', value=str(next_tier))
 
-        await message.clear_reactions()
-        await message.add_reaction('✅')
-        await context.message.channel.send(f'Round {new_round} for {embed.title} up.')
-
-    else:
-        await context.message.channel.send(f"{embed.title}'s remaining hp is {hp}")
-
-    embed.set_field_at(queue_field['hp'], name='HP', value=str(hp), inline=False)
+    await message.clear_reactions()
+    await message.add_reaction('✅')
+    await context.message.channel.send(f'Round {new_round} for {embed.title} up.')
 
     if done:
         user_list = embed.fields[queue_field['user_list']].value.split('\n')
