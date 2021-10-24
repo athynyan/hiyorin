@@ -4,8 +4,7 @@ from utils.mongo import *
 queue_field = {
     'current_round': 0,
     'current_tier': 1,
-    'hp': 2,
-    'user_list': 3
+    'user_list': 2
 }
 
 
