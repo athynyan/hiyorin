@@ -36,12 +36,7 @@ def make_queue_embed_list():
             value='1'
         )
         embed.add_field(
-            name='HP',
-            value=str(hp_list[i + 1][0]),
-            inline=False
-        )
-        embed.add_field(
-            name='Queue',
+            name='Next Round',
             value='???',
             inline=False
         )
