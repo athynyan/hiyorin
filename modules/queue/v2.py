@@ -21,7 +21,7 @@ async def start(context):
     add_document(queue, os.getenv('MONGO_DB_QUEUE'))
 
 
-async def kill(context, boss, damage, done):
+async def kill(context, boss, damage, done=1):
     queue = get_document('server_id', context.message.guild.id, os.getenv('MONGO_DB_QUEUE'))
     message = await context.message.guild.get_channel(queue['channel_id']).fetch_message(queue['message_ids'][boss - 1])
 
@@ -55,7 +55,7 @@ async def kill(context, boss, damage, done):
         if not user_list:
             user_list.append('???')
 
-        embed.set_field_at(queue_field['user_list'], name='Queue', value='\n'.join(user_list), inline=False)
+        embed.set_field_at(queue_field['user_list'], name='Next Round', value='\n'.join(user_list), inline=False)
 
     await message.edit(embed=embed)
 

@@ -66,6 +66,6 @@ def get_args(args):
     if not damage:
         damage = [0]
     if not done:
-        done = [False]
+        done = [True]
 
     return damage.pop(0), done.pop(0)
