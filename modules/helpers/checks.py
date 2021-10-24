@@ -17,7 +17,7 @@ def can_use_command(admin=False):
 
         for author_role in ctx.message.author.roles:
             for role in get_roles():
-                if author_role.id in role and role[-1] == admin:
+                if author_role.id in role and not role[-1] ^ admin:
                     return True
         return False
 
