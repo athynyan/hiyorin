@@ -36,12 +36,7 @@ def make_queue_embed_list():
             value='1'
         )
         embed.add_field(
-            name='HP',
-            value=str(hp_list[i + 1][0]),
-            inline=False
-        )
-        embed.add_field(
-            name='Queue',
+            name='Next Round',
             value='???',
             inline=False
         )
@@ -71,6 +66,6 @@ def get_args(args):
     if not damage:
         damage = [0]
     if not done:
-        done = [False]
+        done = [True]
 
     return damage.pop(0), done.pop(0)

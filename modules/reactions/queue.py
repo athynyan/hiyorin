@@ -92,7 +92,7 @@ async def add_v2(payload, queue, guild, user):
         if user.mention not in user_list:
             user_list.append(user.mention)
 
-        embed.set_field_at(queue_field['user_list'], name='Queue', value='\n'.join(user_list))
+        embed.set_field_at(queue_field['user_list'], name='Next Round', value='\n'.join(user_list), inline=False)
         await message.edit(embed=embed)
 
 
@@ -109,7 +109,7 @@ async def remove_v2(payload, queue, guild, user):
         if not user_list:
             user_list.append('???')
 
-        embed.set_field_at(queue_field['user_list'], name='Queue', value='\n'.join(user_list))
+        embed.set_field_at(queue_field['user_list'], name='Next Round', value='\n'.join(user_list), inline=False)
         await message.edit(embed=embed)
 
 
